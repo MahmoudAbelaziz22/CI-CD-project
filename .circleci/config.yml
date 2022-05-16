@@ -250,6 +250,12 @@ jobs:
           fingerprints: ["8b:a5:fc:6a:75:f1:89:a2:16:e9:47:62:45:5a:d3:77"] 
       # attach workspace
       - run:
+          name: Install dependencies
+          command: |
+            apk add --update nodejs npm
+            node --version
+            npm --version
+      - run:
           name: Install ansible
           command: |
              apk add --update ansible 
@@ -261,6 +267,10 @@ jobs:
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz
+            sudo cp artifact.tar.gz .circleci/Ansible/roles/deploy-backend/files
+            cd .circleci/Ansible/roles/deploy-backend/files
+            pwd
+            ls
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
