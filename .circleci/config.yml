@@ -183,17 +183,20 @@ jobs:
     docker:
      - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
+      - checkout
       - run:
           name: Run migrations
           command: |
-            # Your code here
-            exit 1
+              cd backend
+              npm install
+              npm run migrations > migrations_dump.txt 
       - run:
           name: Send migration results to memstash
           command: |
-            # Your code here
-            exit 1
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+            curl https://kvdb.io/EFCdXPH3VKjv4D76gUiDSd/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            fi
      # Here's where you will add some code to rollback on failure           
 
 workflows:
@@ -213,5 +216,6 @@ workflows:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-
+      - run-migrations:
+          requires: [configure-infrastructure]
      
