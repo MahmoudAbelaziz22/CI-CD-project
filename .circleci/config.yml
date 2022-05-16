@@ -204,11 +204,17 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dependencies
-          command: |
-            yum install python37 -y
+          name: Install python
+          command: | 
+              yum install python37 -y 
+      - run:
+          name: Install ansible
+          command: |  
             yum install epel-release
             yum install ansible -y
+      - run:
+          name: Install node and npm
+          command: |
             curl -sL https://rpm.nodesource.com/setup_10.x | sudo bash -
             yum install nodejs -y
             node --version
