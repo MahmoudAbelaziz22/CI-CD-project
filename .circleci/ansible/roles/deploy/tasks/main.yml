@@ -34,9 +34,6 @@
   file:
     path: ~/web
     state: directory
-  shell: |
-     pwd 
-     ls -al
 
 - name: Copy artifact to web dir
   copy:
@@ -52,7 +49,6 @@
 
 - name: Executing node
   shell: |
-    cd ~/web
     npm install
     pm2 stop default
     pm2 start npm -- start
