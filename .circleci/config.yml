@@ -269,7 +269,8 @@ jobs:
             echo ".....................................##############################"
             cd ..
             tar -C backend -cvzf artifact.tar.gz ./dist package*
-            cp artifact.tar.gz .circleci/Ansible/roles/deploy/files
+            mkdir .circleci/Ansible/roles/deploy/files
+            cp artifact.tar.gz 
             cd .circleci/Ansible/roles/deploy/files
             pwd
             ls
