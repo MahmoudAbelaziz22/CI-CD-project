@@ -49,6 +49,7 @@
 
 - name: Executing node
   shell: |
+    cd ~/web
     cp package-lock.json ./dist
     cp package.json ./dist
     cd dist
