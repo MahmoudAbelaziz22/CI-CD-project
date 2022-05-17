@@ -288,7 +288,48 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
       
-      - destroy-environment   
+      - destroy-environment 
+
+  smoke-test:
+    docker:
+      - image: alpine:3.14 
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apk update
+            apk upgrade
+            apk add curl
+            apk add --update nodejs npm
+            apk add --no-cache aws-cli
+      - run:
+          name: Get backend url
+          command: |
+            
+            export API_URL=${cat frontend/.env}
+            echo "${API_URL}"
+         
+      - run:
+          name: Backend smoke test.
+          command: |
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+            return 0
+            else
+            return 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+            echo ${URL} 
+            if curl -s ${URL} | grep "Welcome"
+            then
+            return 1
+            else
+            return 1
+            fi
 
 workflows:
   default:
