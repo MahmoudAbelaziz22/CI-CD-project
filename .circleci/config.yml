@@ -269,7 +269,6 @@ jobs:
             tar -C backend -cvzf artifact.tar.gz ./dist package*
             mkdir .circleci/ansible/roles/deploy/files
             cp artifact.tar.gz .circleci/ansible/roles/deploy/files
-            cd .circleci/ansible/roles/deploy/files
             pwd
             ls
             cd .circleci/ansible
