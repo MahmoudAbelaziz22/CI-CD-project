@@ -270,7 +270,7 @@ jobs:
             cd ..
             tar -C backend -cvzf artifact.tar.gz ./dist package*
             cp artifact.tar.gz .circleci/Ansible/roles/deploy/files
-            cd .circleci/Ansible/roles/deploy-backend/files
+            cd .circleci/Ansible/roles/deploy/files
             pwd
             ls
             cd .circleci/ansible
