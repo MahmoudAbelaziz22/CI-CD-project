@@ -288,14 +288,12 @@ jobs:
           fingerprints: ["8b:a5:fc:6a:75:f1:89:a2:16:e9:47:62:45:5a:d3:77"] 
       - attach_workspace:
           at: ~/
-      - restore_cache:
-          keys: [backend-build]
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible nodejs npm curl rsync openssh openssh-client
-            apk add --upgrade bash
-            pip install awscli
+            apk add --update nodejs npm
+            node --version
+            npm --version
       - run:
           name: Install ansible
           command: |
