@@ -277,7 +277,7 @@ jobs:
             id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
       - revert-migrations:
-          run_id: ${CIRCLE_WORKFLOW_ID:0:7}    
+            id: ${CIRCLE_WORKFLOW_ID:0:7}    
   
   deploy-backend:
     docker:
@@ -325,7 +325,7 @@ jobs:
           id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
       - revert-migrations:
-          run_id: ${CIRCLE_WORKFLOW_ID:0:7} 
+            id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
   smoke-test:
     docker:
@@ -377,9 +377,9 @@ jobs:
           id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
       - revert-migrations:
-          run_id: ${CIRCLE_WORKFLOW_ID:0:7} 
+            id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
-          
+
 workflows:
   default:
     jobs:
