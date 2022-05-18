@@ -1,36 +1,6 @@
 version: 2.1
 
 commands:
-
-  install_awscli:
-    description: "Installs AWS_CLI"
-    steps:
-      - run: 
-          name: "Install AWS CLI"
-          command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-  install_ansible:
-    description: "Installs Ansible on Ubuntu images"
-    steps:
-      - run: 
-          name: "Install Ansible"
-          command: |
-            sudo apt update
-            sudo apt install software-properties-common -y
-            sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible -y
-  
-  install_nodejs:
-    description: "This command installs NodeJS on the docker image"
-    steps:
-      - run:
-          name: "Installing node js"
-          command: |
-            curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
-            sudo apt install -y nodejs
-            
   destroy-environment:
     parameters:
       id:
@@ -311,44 +281,48 @@ jobs:
   
   deploy-backend:
     docker:
-      - image: cimg/base:2022.04
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - install_awscli
-      - install_ansible
-      - install_nodejs
       - add_ssh_keys:
-          fingerprints: ["8b:a5:fc:6a:75:f1:89:a2:16:e9:47:62:45:5a:d3:77"]
+          fingerprints: ["8b:a5:fc:6a:75:f1:89:a2:16:e9:47:62:45:5a:d3:77"] 
       - attach_workspace:
           at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update nodejs npm
+            node --version
+            npm --version
+      - run:
+          name: Install ansible
+          command: |
+             apk add --update ansible
       - run:
           name: Install dependencies
           command: |
             cd backend
             npm install
       - run:
-          name: package backend
+          name: Deploy backend
           command: |
             cd backend
             npm i
             npm run build
-            cd ../
-            tar -czf artifact.tar.gz backend
-            cp artifact.tar.gz .circleci/ansible/roles/deploy/tasks/files
-      - run:
-          name: Deploy backend
-          command: |
-            export TYPEORM_MIGRATIONS_DIR=.migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
+            cd ..
+            tar -cvzf artifact.tar.gz  backend 
+            mkdir .circleci/ansible/roles/deploy/files
+            cp artifact.tar.gz .circleci/ansible/roles/deploy/files
             cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
 
-      # - destroy-environment:
-      #     id: ${CIRCLE_WORKFLOW_ID:0:7} 
+      - destroy-environment:
+          id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
-      # - revert-migrations:
-      #       id: ${CIRCLE_WORKFLOW_ID:0:7} 
+      - revert-migrations:
+            id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
   smoke-test:
     docker:
