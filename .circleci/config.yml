@@ -2,17 +2,34 @@ version: 2.1
 
 commands:
   destroy-environment:
-    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      id:
+        type: string
     steps:
       - run:
-          name: Destroy environment 
+          name: Destroy environment
           when: on_fail
           command: |
-            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/doc --recursive 
-            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
-            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws s3 rm s3://udapeople-<< parameters.id >> --recursive
+            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.id >>
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.id >>
 
+  revert-migrations:
+    parameters:
+      id:
+        type: string
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          working_directory: ./backend
+          command: |
+            VALUE=$(curl -k https://kvdb.io/EFCdXPH3VKjv4D76gUiDSd/migration_<< parameters.id >>  -d '1')
+            echo $VALUE
+            if [[ "$VALUE" == "success" ]]
+            then
+              npm run migrations:revert
+            fi
 
 jobs:
   build-frontend:
@@ -161,7 +178,8 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
 
-      - destroy-environment     
+      - destroy-environment:
+            id: ${CIRCLE_WORKFLOW_ID:0:7}  
   
   configure-infrastructure:
     docker:
@@ -172,8 +190,6 @@ jobs:
           fingerprints: ["8b:a5:fc:6a:75:f1:89:a2:16:e9:47:62:45:5a:d3:77"] 
       - attach_workspace:
           at: ~/
-      - restore_cache:
-          keys: [backend-build]
       - run:
           name: Install dependencies
           command: |
@@ -185,7 +201,8 @@ jobs:
              cat inventory.txt
              ansible-playbook -i inventory.txt configure-server.yml 
       
-      - destroy-environment 
+      - destroy-environment:
+            id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
   run-migrations:
     docker:
@@ -206,15 +223,14 @@ jobs:
             curl -k https://kvdb.io/EFCdXPH3VKjv4D76gUiDSd/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
-      - destroy-environment 
+      - destroy-environment:
+            id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
   deploy-frontend:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - restore_cache:
-          keys: [frontend-build]
       - run:
           name: Install tar utility
           command: |
@@ -257,7 +273,11 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       
-      - destroy-environment      
+      - destroy-environment:
+            id: ${CIRCLE_WORKFLOW_ID:0:7} 
+
+      - revert-migrations:
+          run_id: ${CIRCLE_WORKFLOW_ID:0:7}    
   
   deploy-backend:
     docker:
@@ -273,9 +293,9 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update nodejs npm
-            node --version
-            npm --version
+            apk add --update ansible nodejs npm curl rsync openssh openssh-client
+            apk add --upgrade bash
+            pip install awscli
       - run:
           name: Install ansible
           command: |
@@ -286,20 +306,26 @@ jobs:
             cd backend
             npm i
             npm run build
-            pwd
-            ls -al
             cd ..
+            printenv >> ./backend/.env
             tar -C backend -cvzf artifact.tar.gz ./dist ./package.json ./package-lock.json
             mkdir .circleci/ansible/roles/deploy/files
             cp artifact.tar.gz .circleci/ansible/roles/deploy/files
-            pwd
-            ls .circleci/ansible/roles/deploy/files
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      
-      - destroy-environment 
+
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - backend/.env
+
+      - destroy-environment:
+          id: ${CIRCLE_WORKFLOW_ID:0:7} 
+
+      - revert-migrations:
+          run_id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
   smoke-test:
     docker:
@@ -347,8 +373,13 @@ jobs:
             return 1
             fi
 
-     
+      - destroy-environment:
+          id: ${CIRCLE_WORKFLOW_ID:0:7} 
 
+      - revert-migrations:
+          run_id: ${CIRCLE_WORKFLOW_ID:0:7} 
+
+          
 workflows:
   default:
     jobs:
