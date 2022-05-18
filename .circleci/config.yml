@@ -297,6 +297,8 @@ jobs:
       - run:
           name: Install ansible
           command: |
+             pip install awscli
+             apk add --update curl
              apk add --update ansible 
       - run:
           name: Deploy backend
@@ -305,6 +307,8 @@ jobs:
             # npm i
             # npm run build
             # cd ..
+            pwd
+            ls -al
             tar -C backend -cvzf artifact.tar.gz ./backend
             mkdir .circleci/ansible/roles/deploy/files
             cp artifact.tar.gz .circleci/ansible/roles/deploy/files
